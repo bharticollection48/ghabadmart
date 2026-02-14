@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghaba - Quality Shopping</title>
+    
+    <link rel="icon" type="image/png" href="https://img.freepik.com/premium-vector/shopping-logo-vector-icon_636116-200.jpg?semt=ais_hybrid&w=740&q=80"> 
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #ffffff; text-align: center; color: #333; }
+        
+        .qr-header { background: #9c27b0; color: white; padding: 20px 10px; border-radius: 0 0 25px 25px; }
+        .qr-header h1 { margin: 0; font-size: 22px; }
+
+        .timer-box { margin: 20px 0; font-size: 18px; color: #ff4757; font-weight: bold; }
+        #countdown { font-size: 24px; display: block; margin-top: 5px; }
+
+        .amount-tag { font-size: 32px; font-weight: bold; margin: 10px 0; }
+        .amount-tag small { font-size: 14px; color: #666; font-weight: normal; }
+
+        .qr-main-box {
+            margin: 10px auto;
+            padding: 15px;
+            width: 260px;
+            border: 2px solid #9c27b0;
+            border-radius: 20px;
+            background: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        #qrImage { width: 100%; height: auto; display: block; }
+
+        .note { font-size: 13px; color: #666; padding: 0 30px; line-height: 1.5; margin-top: 20px; }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #9c27b0;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 2s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="qr-header">
+        <h1><i class="fa-solid fa-qrcode"></i> UPI Payment</h1>
+    </div>
+
+    <div class="timer-box">
+        Kripya payment poori karein...
+        <span id="countdown">05:00</span>
+    </div>
+
+    <div class="amount-tag">
+        <small>Payable Amount:</small><br>
+        <span id="displayAmount">₹0</span>
+    </div>
+
+    <div class="qr-main-box">
+        <img id="qrImage" src="" alt="QR Loading...">
+    </div>
+
+    <div class="note">
+        <div class="loader"></div> 
+        System aapki payment ka intezar kar raha hai. QR scan karke payment karein, page ko refresh na karein.
+    </div>
+
+    <script>
+        // --- APNA UPI ID ---
+        const UPI_ID = "seema723@ptyes";
+
+        window.onload = function () {
+
+            // 🔥 Amount form/address page se
+            let price = localStorage.getItem("checkoutPrice");
+
+            if (!price || price == 0) {
+                alert("Payment amount not found!");
+                window.location.href = "index.html";
+                return;
+            }
+
+            document.getElementById("displayAmount").innerText = "₹" + price;
+
+            // 🔥 QR Generate
+            let upiLink = `upi://pay?pa=${UPI_ID}&pn=GhabaOrder&am=${price}&cu=INR`;
+            let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiLink)}`;
+            document.getElementById("qrImage").src = qrUrl;
+
+            // 🔥 5 minute timer
+            startTimer(300);
+        };
+
+        function startTimer(duration) {
+            let timer = duration;
+            let display = document.getElementById("countdown");
+
+            let interval = setInterval(function () {
+                let minutes = Math.floor(timer / 60);
+                let seconds = timer % 60;
+
+                display.textContent =
+                    (minutes < 10 ? "0" : "") + minutes + ":" +
+                    (seconds < 10 ? "0" : "") + seconds;
+
+                if (--timer < 0) {
+                    clearInterval(interval);
+                    alert("Time khatam ho gaya! Order cancel ho sakta hai.");
+                    window.location.href = "index.html";
+                }
+            }, 1000);
+        }
+    </script>
+
+</body>
+</html>

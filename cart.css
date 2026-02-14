@@ -1,0 +1,169 @@
+/* --- Global Styles --- */
+:root {
+    --primary-color: #9c27b0;
+    --bg-light: #f7f8f9;
+    --text-dark: #222;
+    --text-muted: #666;
+    --white: #ffffff;
+    --border-color: #ececec;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-dark);
+}
+
+/* --- Header Navigation --- */
+.nav {
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.nav i {
+    font-size: 18px;
+    margin-right: 15px;
+    cursor: pointer;
+}
+
+.nav-title {
+    font-weight: 700;
+    font-size: 16px;
+    display: block;
+}
+
+/* --- Cart Items List --- */
+#cartItemsList {
+    margin-bottom: 10px;
+}
+
+.cart-card {
+    display: flex;
+    padding: 15px;
+    background: var(--white);
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.cart-card img {
+    width: 90px;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #f0f0f0;
+}
+
+.item-details {
+    flex-grow: 1;
+    padding-left: 15px;
+}
+
+.item-details h4 {
+    margin: 0 0 5px 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.item-info {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.item-price {
+    font-weight: 700;
+    font-size: 16px;
+    color: #333;
+}
+
+.remove-btn {
+    margin-top: 12px;
+    color: #ff4757;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    text-transform: uppercase;
+}
+
+/* --- Bill Section --- */
+#billSection {
+    background: var(--white);
+    padding: 20px 15px;
+    margin-bottom: 100px;
+}
+
+.bill-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 15px;
+}
+
+.bill-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.total-row {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed #ccc;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+/* --- Footer --- */
+#footerSection {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--white);
+    padding: 12px 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.08);
+    z-index: 1000;
+}
+
+.footer-price-box span {
+    display: block;
+}
+
+.btn-continue {
+    background: var(--primary-color);
+    color: var(--white);
+    border: none;
+    padding: 14px 45px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(156, 39, 176, 0.2);
+}
+
+/* --- Empty Cart --- */
+#emptyMessage {
+    background: var(--white);
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}

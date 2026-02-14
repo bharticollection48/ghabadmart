@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghaba - Quality Shopping</title>
+    
+    <link rel="icon" type="image/png" href="https://img.freepik.com/premium-vector/shopping-logo-vector-icon_636116-200.jpg?semt=ais_hybrid&w=740&q=80"> 
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Logo & Avatar Styles */
+        .brand { display: flex; align-items: center; gap: 8px; }
+        .user-avatar-img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+            cursor: pointer;
+            border: 1.5px solid #ff4757;
+        }
+
+        /* Wishlist Badge Style */
+        .wishlist-wrapper { position: relative; cursor: pointer; margin-right: 10px; }
+        .wish-badge {
+            position: absolute; top: -8px; right: -8px;
+            background: #ff4757; color: white; font-size: 10px;
+            padding: 2px 6px; border-radius: 50%; font-weight: bold; display: none;
+        }
+
+        /* Dropdown Style */
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 15px;
+            top: 55px;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            z-index: 1000;
+        }
+        .dropdown-menu a {
+            display: block;
+            padding: 12px 20px;
+            text-decoration: none;
+            color: #333;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="header-top">
+            <div class="brand">
+                <img src="https://img.freepik.com/premium-vector/shopping-logo-vector-icon_636116-200.jpg?semt=ais_hybrid&w=740&q=80" 
+                    alt="Ghaba Logo" 
+                    class="user-avatar-img" 
+                    onclick="window.location.reload()">
+                
+                <h2 class="logo" onclick="window.location.reload()">Ghaba</h2>
+            </div>
+            
+            <div class="header-icons">
+                <span class="refer-badge">🎁 Refer</span>
+                
+                <div class="wishlist-wrapper" onclick="window.location.href='wishlist.html'">
+                    <i id="mainWishIcon" class="fa-regular fa-heart icon-btn"></i>
+                    <span id="wishBadge" class="wish-badge">0</span>
+                </div>
+
+                <div class="cart-wrapper" onclick="window.location.href='cart.html'">
+                    <i class="fa-solid fa-cart-shopping icon-btn"></i>
+                    <span id="cartBadgeIndex" class="cart-badge">0</span>
+                </div>
+
+                <div class="menu-wrapper">
+                    <i class="fa-solid fa-ellipsis-vertical menu-trigger" style="cursor:pointer; padding:5px;" onclick="toggleDropdown(event)"></i>
+                    <div id="menuDropdown" class="dropdown-menu">
+                        <a href="#" onclick="alert('Ghaba: Best Online Shopping')">About Site</a>
+                        <a href="#" onclick="alert('Help Line: 1800-123-4567')">Help Line</a>
+                        <a href="https://wa.me/91XXXXXXXXXX?text=Hello" target="_blank">Customer Care</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-bar-container">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="प्रोडक्ट खोजें..." oninput="searchProduct()">
+            <div class="search-actions">
+                <i class="fa-solid fa-microphone"></i>
+                <i class="fa-solid fa-camera"></i>
+            </div>
+        </div>
+    </header>
+
+    <section class="category-strip" id="catStrip"></section>
+
+    <div class="filter-strip">
+        <button class="pill-btn" onclick="sortProducts('low')">High Price</button>
+        <button class="pill-btn" onclick="sortProducts('high')"> Low Price</button>
+        <button class="pill-btn" onclick="refreshData()">Reset <i class="fa-solid fa-rotate-right"></i></button>
+    </div>
+
+    <main id="productDisplay" class="product-grid">
+        <div style="text-align:center; padding:50px; grid-column:1/-1;">
+            <i class="fa-solid fa-spinner fa-spin"></i> Loading Products...
+        </div>
+    </main>
+
+    <footer class="main-footer">
+        <div class="footer-stats">
+            <div class="stat"><i class="fa-solid fa-truck-fast"></i><span>Free Delivery</span></div>
+            <div class="stat"><i class="fa-solid fa-hand-holding-dollar"></i><span>COD Available</span></div>
+            <div class="stat"><i class="fa-solid fa-rotate-left"></i><span>7 Days Return</span></div>
+        </div>
+        <div class="footer-bottom">
+            <p class="footer-logo">Ghaba Shopping</p>
+            <p class="copyright">© 2026 Ghaba.com | All Rights Reserved</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- CONFIGURATION ---
+        // Yahan aapka URL pehle se updated hai
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwa6pRaolfAsAWvljQM_2wj1K6ZHm5pNnqMCKFGbZbCJ4o66HObBQh4DF0NKHZY9PKm/exec"; 
+        let allProducts = [];
+        let currentData = [];
+
+        const categories = [
+            { name: "All", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQw005aWBBxt8RcW0Q88qCM40ZUVgc6v3b7IEkbehVAKA&s" },
+            { name: "Saree", img: "https://i.pinimg.com/736x/91/25/b4/9125b4293e92ec942e0d8cb4b5d7b806.jpg" },
+            { name: "Kurtis & Dress", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmG2YSFD_Mc6bBBNV9TVMihhLI2FOKAhMEqw&s" },
+            { name: "Western Wear", img:  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRlqEN2HV1OeH-h5WToEUvp7zpJF3KXMPAcQw&s" },
+            { name: "perfume", img: "https://static.vecteezy.com/system/resources/previews/016/664/754/non_2x/perfume-logo-illustration-symbol-design-vector.jpg" },
+            { name: "Combo Offers", img: "https://images.meesho.com/images/products/392338891/pyzvs_512.webp?width=512" },
+            { name: "Gifts", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQzpFTSD2M2CJaRIMnDLiVLHemjYmU6Fu-ywQ&s" },
+            { name: "Jewellery", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQHOvON_kLsmZ56jxrDCW-WXXpTvg1yMICHGQ&s" },
+            { name: "Beauty", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRYL6Ea6vreSAnhYMBs1LWnPulr6_j56BbL9Q&s" },
+            { name: "Home & Kitchen", img: "https://static.india.com/wp-content/uploads/2024/07/WhatsApp-Image-2024-07-16-at-22.33.04.jpeg?impolicy=Medium_Widthonly&w=400" },
+            { name: "Electronics", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSQkhnThL1LZ8DjOytXSb-YCatwQxClub9NJQ&s" },
+            { name: "Footwear", img: "https://www.shutterstock.com/image-photo/various-styles-male-pile-brown-260nw-1653027301.jpg" },
+            { name: "Bags & Accessories", img: "https://m.media-amazon.com/images/I/71OyvK62iCL._AC_UY1000_.jpg" }
+        ];
+
+        function loadCategories() {
+            const strip = document.getElementById('catStrip');
+            strip.innerHTML = categories.map(cat => `
+                <div class="cat-item" onclick="filterProducts('${cat.name}')">
+                    <div class="cat-circle">
+                        <img src="${cat.img}" alt="${cat.name}" onerror="this.src='https://via.placeholder.com/50'">
+                    </div>
+                    <p>${cat.name}</p>
+                </div>
+            `).join('');
+        }
+
+        async function refreshData() {
+            try {
+                // Pehle LocalStorage wala turant dikhao (Fast loading)
+                const localData = localStorage.getItem('myProducts');
+                if (localData) {
+                    allProducts = JSON.parse(localData);
+                    currentData = [...allProducts];
+                    render(allProducts);
+                }
+
+                // Cloud se naya data fetch karo (Sync for all devices)
+                if (SCRIPT_URL) {
+                    // Cache bust karne ke liye timestamp use kiya hai taaki fresh data mile
+                    const response = await fetch(SCRIPT_URL + "?t=" + new Date().getTime());
+                    const sheetData = await response.json();
+                    
+                    if (sheetData && sheetData.length > 0) {
+                        allProducts = sheetData;
+                        localStorage.setItem('myProducts', JSON.stringify(allProducts));
+                        currentData = [...allProducts];
+                        render(allProducts);
+                        console.log("Cloud sync successful!");
+                    }
+                }
+            } catch (e) {
+                console.log("Data Sync Error:", e);
+                // Error hone par local data se chalne do
+                allProducts = JSON.parse(localStorage.getItem('myProducts')) || [];
+                render(allProducts);
+            }
+            updateCartBadge();
+            updateWishlistBadge();
+        }
+
+        function render(data) {
+            const grid = document.getElementById('productDisplay');
+            if (!grid) return;
+            
+            if (!data || data.length === 0) {
+                grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px;"><h3>Koi product nahi mila!</h3></div>';
+                return;
+            }
+
+            const wishlist = JSON.parse(localStorage.getItem('myWishlist')) || [];
+
+            grid.innerHTML = [...data].reverse().map(p => {
+                const price = parseFloat(p.price) || 0;
+                const oldPrice = Math.round(price * 1.4);
+                const img = p.mainImg || p.img || (p.gallery && p.gallery[0]) || 'https://via.placeholder.com/300';
+                const isFav = wishlist.includes(p.id);
+
+                return `
+                    <div class="p-card" onclick="openProduct(${p.id})">
+                        <div class="p-img-wrapper">
+                            <img src="${img}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/300'">
+                            <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart wish-icon" 
+                               style="color: ${isFav ? '#ff4757' : ''}" 
+                               onclick="toggleWishlist(event, ${p.id})"></i>
+                        </div>
+                        <div class="p-details">
+                            <p class="p-name">${p.name}</p>
+                            <div class="p-price-row">
+                                <span class="curr-price">₹${price}</span>
+                                <span class="old-price">₹${oldPrice}</span>
+                                <span class="discount">30% OFF</span>
+                            </div>
+                            <p class="delivery-text">Free Delivery</p>
+                            <div class="p-footer">
+                                <span class="rating-pill">4.2 ★</span>
+                                <span class="trusted-tag">Trusted</span>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function toggleWishlist(event, id) {
+            event.stopPropagation();
+            let wishlist = JSON.parse(localStorage.getItem('myWishlist')) || [];
+            const index = wishlist.indexOf(id);
+            if (index === -1) wishlist.push(id);
+            else wishlist.splice(index, 1);
+            localStorage.setItem('myWishlist', JSON.stringify(wishlist));
+            render(currentData);
+            updateWishlistBadge();
+        }
+
+        function updateWishlistBadge() {
+            const badge = document.getElementById('wishBadge');
+            const mainIcon = document.getElementById('mainWishIcon');
+            let wishlist = JSON.parse(localStorage.getItem('myWishlist')) || [];
+            badge.innerText = wishlist.length;
+            if (wishlist.length > 0) {
+                badge.style.display = "block";
+                mainIcon.style.color = "#ff4757";
+                mainIcon.classList.replace('fa-regular', 'fa-solid');
+            } else {
+                badge.style.display = "none";
+                mainIcon.style.color = "";
+                mainIcon.classList.replace('fa-solid', 'fa-regular');
+            }
+        }
+
+        function toggleDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('menuDropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function updateCartBadge() {
+            const badge = document.getElementById('cartBadgeIndex');
+            if (!badge) return;
+            let cart = JSON.parse(localStorage.getItem('myCart')) || [];
+            badge.innerText = cart.length;
+            badge.style.display = cart.length > 0 ? "block" : "none";
+        }
+
+        function searchProduct() {
+            const val = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allProducts.filter(p => p.name.toLowerCase().includes(val));
+            render(filtered);
+        }
+
+        function filterProducts(catName) {
+            currentData = (catName === 'All') ? [...allProducts] : allProducts.filter(p => p.category === catName);
+            render(currentData);
+        }
+
+        function sortProducts(type) {
+            const sorted = [...currentData].sort((a, b) => type === 'low' ? a.price - b.price : b.price - a.price);
+            render(sorted);
+        }
+
+        function openProduct(id) {
+            window.location.href = `details.html?id=${id}`; 
+        }
+
+        window.onclick = () => {
+            const dropdown = document.getElementById('menuDropdown');
+            if (dropdown) dropdown.style.display = 'none';
+        }
+
+        window.onload = () => {
+            loadCategories();
+            refreshData();
+        };
+        
+        window.onfocus = () => {
+            updateCartBadge();
+            updateWishlistBadge();
+            refreshData(); // Jab app vapas kholein toh refresh ho jaye
+        };
+    </script>
+</body>
+</html>
