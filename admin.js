@@ -1,66 +1,100 @@
 // --- 1. CONFIGURATION ---
-const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbwa6pRaolfAsAWvljQM_2wj1K6ZHm5pNnqMCKFGbZbCJ4o66HObBQh4DF0NKHZY9PKm/exec";
+// DHAYAN DEIN: Google Script update karne ke baad naya URL yahan zaroor dalein
+const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyQVeV9dCAOstzdZ6K4xDZ62NYtHf8d1E3jbSUyJaH-lnrL6FFgKHNXAQmP7mA4aMVM/exec";
 const IMGBB_API_KEY = "9e2c45e20b2a686c19d3c0cc9cf06f9b"; 
 
-// --- 2. Security Check & Settings Loader ---
-window.onload = function() {
-    // LocalStorage se saved password uthao
+// --- 2. Server se Settings Fetch Karna (Login se pehle) ---
+async function fetchServerSettings() {
+    try {
+        const response = await fetch(GOOGLE_SHEET_URL);
+        const data = await response.json();
+        
+        // Server wala data LocalStorage mein backup rakhein
+        if (data.settings) {
+            localStorage.setItem('adminPassword', data.settings.password);
+            localStorage.setItem('ghabaUPI', data.settings.upi);
+            
+            // UI Update karein (Current status dikhane ke liye)
+            if(document.getElementById('currentUPIText')) document.getElementById('currentUPIText').innerText = data.settings.upi;
+            if(document.getElementById('currentPassText')) document.getElementById('currentPassText').innerText = data.settings.password;
+            if(document.getElementById('adminUPI')) document.getElementById('adminUPI').value = data.settings.upi;
+        }
+        return data.products || [];
+    } catch (error) {
+        console.error("Server Fetch Error:", error);
+        return [];
+    }
+}
+
+// --- 3. Security Check on Load ---
+window.onload = async function() {
+    // Page load hote hi pehle server se taaza password mangwao
+    const serverProducts = await fetchServerSettings();
+    
     const savedPass = localStorage.getItem('adminPassword') || "admin123";
     let pass = prompt("Enter Admin Password:");
     
     if (pass === savedPass) {
         document.body.style.display = "block";
-        displayAdminProducts();
-        refreshSettingsUI(); // UPI aur Password ko screen par dikhane ke liye
+        displayAdminProducts(serverProducts); 
     } else {
-        alert("Access Denied!");
+        alert("Access Denied! Galat Password.");
         window.location.href = "index.html";
     }
 };
 
-// --- 2.1 Settings UI Refresh (Current Data dikhane ke liye) ---
-function refreshSettingsUI() {
-    // Current UPI dikhao
-    const currentUPI = localStorage.getItem('ghabaUPI') || "Not Set";
-    if(document.getElementById('adminUPI')) {
-        document.getElementById('adminUPI').value = currentUPI;
-    }
+// --- 4. Server Update Logic (Password & UPI) ---
+async function syncSettingsToServer(newUpi, newPass) {
+    const data = {
+        type: "updateSettings",
+        upi: newUpi,
+        password: newPass
+    };
 
-    // Current Password dikhao (Agar aapne HTML mein span id="currentPassText" banaya hai)
-    const currentPass = localStorage.getItem('adminPassword') || "admin123";
+    // UI par loading dikhao
     const passLabel = document.getElementById('currentPassText');
-    if(passLabel) {
-        passLabel.innerText = currentPass;
+    if(passLabel) passLabel.innerText = "Syncing...";
+
+    try {
+        await fetch(GOOGLE_SHEET_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Google Apps Script ke liye zaroori hai
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        alert("Server updated! Sabhi admins ke liye settings badal gayi hain. ✅");
+        // Local update
+        localStorage.setItem('ghabaUPI', newUpi);
+        localStorage.setItem('adminPassword', newPass);
+        location.reload(); // Refresh taaki naya data confirm ho jaye
+    } catch (error) {
+        alert("Server error! Settings save nahi ho payi.");
+        console.error(error);
     }
 }
 
-// --- 2.2 Admin Settings Functions ---
 function updateUPI() {
     const upi = document.getElementById('adminUPI').value.trim();
+    const currentPass = localStorage.getItem('adminPassword');
     if(upi) {
-        localStorage.setItem('ghabaUPI', upi);
-        alert("UPI ID Updated Successfully! ✅");
-        refreshSettingsUI();
+        syncSettingsToServer(upi, currentPass);
     } else {
-        alert("Kripya UPI ID bhariye!");
+        alert("UPI ID bhariye!");
     }
 }
 
 function updatePass() {
     const newPass = document.getElementById('adminPass').value.trim();
+    const currentUPI = localStorage.getItem('ghabaUPI');
     if(newPass.length >= 4) {
-        localStorage.setItem('adminPassword', newPass);
-        alert("Admin Password Updated! ✅\nAb naya password hi use hoga.");
-        document.getElementById('adminPass').value = ""; // Input clear karo
-        refreshSettingsUI();
+        syncSettingsToServer(currentUPI, newPass);
     } else {
         alert("Password kam se kam 4 characters ka rakhein!");
     }
 }
 
-/**
- * --- 3. Smart Cloud Upload (ImgBB) ---
- */
+// --- 5. Photo Upload (ImgBB) ---
 async function autoUrl(input, slot) {
     const file = input.files[0];
     if (!file) return;
@@ -90,17 +124,14 @@ async function autoUrl(input, slot) {
                 previewImg.style.opacity = "1";
             }
             if (btnSpan) btnSpan.innerText = "Done ✅";
-        } else {
-            alert("Upload Fail! Check ImgBB Key.");
-            if (btnSpan) btnSpan.innerText = "Retry";
         }
     } catch (error) {
-        console.error("ImgBB Error:", error);
-        alert("Network Error! Photo upload nahi hui.");
+        alert("Photo upload fail!");
+        if (btnSpan) btnSpan.innerText = "Gallery";
     }
 }
 
-// --- 4. Save Product Logic ---
+// --- 6. Save Product ---
 async function saveProduct() {
     const name = document.getElementById('pName').value.trim();
     const price = document.getElementById('pPrice').value.trim();
@@ -116,14 +147,12 @@ async function saveProduct() {
     ].filter(url => url.trim() !== "");
 
     if (!name || !price || gallery.length === 0) {
-        alert("Please fill Name, Price and at least 1 Image!");
+        alert("Name, Price aur Image zaroori hai!");
         return;
     }
 
     const submitBtn = document.querySelector('.btn-upload');
-    const originalText = submitBtn.innerText;
-    
-    submitBtn.innerText = "PUBLISHING...";
+    submitBtn.innerText = "PUBLISHING TO CLOUD...";
     submitBtn.disabled = true;
 
     const newProduct = {
@@ -140,29 +169,22 @@ async function saveProduct() {
         await fetch(GOOGLE_SHEET_URL, {
             method: 'POST',
             mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newProduct)
         });
 
-        let products = JSON.parse(localStorage.getItem('myProducts')) || [];
-        products.push(newProduct);
-        localStorage.setItem('myProducts', JSON.stringify(products));
-
-        alert("Product Published Successfully! ✅");
+        alert("Product Published to Server! ✅");
         resetAdminForm();
-        displayAdminProducts();
+        location.reload(); 
 
     } catch (error) {
-        console.error("Critical Error:", error);
-        alert("Could not sync with Cloud. Product saved locally only.");
+        alert("Server error! Product save nahi hua.");
     } finally {
-        submitBtn.innerText = originalText;
+        submitBtn.innerText = "PUBLISH PRODUCT";
         submitBtn.disabled = false;
     }
 }
 
-// --- 5. Supporting Functions ---
-
+// --- 7. UI Helpers ---
 function resetAdminForm() {
     document.getElementById('pName').value = "";
     document.getElementById('pPrice').value = "";
@@ -172,35 +194,24 @@ function resetAdminForm() {
         const pre = document.getElementById(`pre${i}`);
         if (pre) pre.src = "";
     }
-    const fileBtns = document.querySelectorAll('.btn-file');
-    fileBtns.forEach(btn => btn.innerText = "Gallery");
 }
 
-function displayAdminProducts() {
+function displayAdminProducts(products) {
     const list = document.getElementById('adminProductList');
     if (!list) return;
     
-    let products = JSON.parse(localStorage.getItem('myProducts')) || [];
+    const displayData = products || [];
     
-    list.innerHTML = products.slice().reverse().map(p => `
+    list.innerHTML = displayData.slice().reverse().map(p => `
         <div class="p-card">
-            <button class="delete-btn" onclick="deleteProduct(${p.id})">×</button>
-            <img src="${p.mainImg}" onerror="this.src='https://via.placeholder.com/150';">
-            <p style="font-size:12px; font-weight:bold; margin: 5px 0; color:#333;">${p.name}</p>
-            <p style="color:#ff4757; font-weight:bold; margin: 0;">₹${p.price}</p>
+            <img src="${p.mainImg}">
+            <p style="font-size:12px; margin:5px 0;">${p.name}</p>
+            <p style="color:#ff4757; font-weight:bold;">₹${p.price}</p>
         </div>
     `).join('');
 }
 
-function deleteProduct(id) {
-    if (confirm("Delete this product from view?")) {
-        let products = JSON.parse(localStorage.getItem('myProducts')) || [];
-        products = products.filter(p => p.id !== id);
-        localStorage.setItem('myProducts', JSON.stringify(products));
-        displayAdminProducts();
-    }
-}
-
 function logout() { 
+    sessionStorage.clear();
     window.location.href = "index.html"; 
 }
