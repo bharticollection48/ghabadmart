@@ -3,19 +3,19 @@
 const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyQVeV9dCAOstzdZ6K4xDZ62NYtHf8d1E3jbSUyJaH-lnrL6FFgKHNXAQmP7mA4aMVM/exec";
 const IMGBB_API_KEY = "9e2c45e20b2a686c19d3c0cc9cf06f9b"; 
 
-// --- 2. Server se Fresh Settings Fetch Karna ---
+// --- 2. Server se Settings Fetch Karna (Auto-Sync) ---
 async function fetchServerSettings() {
     try {
-        // Cache bypass karne ke liye timestamp add kiya hai
+        // Cache bypass karne ke liye timestamp add kiya hai taaki hamesha naya data mile
         const response = await fetch(GOOGLE_SHEET_URL + "?t=" + Date.now());
         const data = await response.json();
         
         if (data.settings) {
-            // IMPORTANT: Purana LocalStorage saaf karke naya data daalna
+            // Server wala data LocalStorage mein Force Update karna
             localStorage.setItem('adminPassword', data.settings.password);
             localStorage.setItem('ghabaUPI', data.settings.upi);
             
-            // UI Update (Labels)
+            // UI Update (Agar Elements page par hain toh)
             if(document.getElementById('currentUPIText')) document.getElementById('currentUPIText').innerText = data.settings.upi;
             if(document.getElementById('currentPassText')) document.getElementById('currentPassText').innerText = data.settings.password;
             if(document.getElementById('adminUPI')) document.getElementById('adminUPI').value = data.settings.upi;
@@ -27,12 +27,12 @@ async function fetchServerSettings() {
     }
 }
 
-// --- 3. Security Check on Load (Force Server Check) ---
+// --- 3. Security Check on Load (Server First) ---
 window.onload = async function() {
-    // Page load hote hi pehle server se taaza password mangwao
+    // Page load hote hi pehle server se taaza settings mangwao
     const serverProducts = await fetchServerSettings();
     
-    // Ab wahi password uthayega jo abhi server se aaya hai
+    // Ab wahi password use hoga jo Google Sheet par hai
     const latestPass = localStorage.getItem('adminPassword') || "admin123";
     let userEntry = prompt("Enter Admin Password:");
     
@@ -40,12 +40,12 @@ window.onload = async function() {
         document.body.style.display = "block";
         displayAdminProducts(serverProducts); 
     } else {
-        alert("Access Denied! Galat Password ya Server Update nahi hua.");
+        alert("Access Denied! Galat Password.");
         window.location.href = "index.html";
     }
 };
 
-// --- 4. Server Update Logic (Settings Sync) ---
+// --- 4. Server Update Logic (Password & UPI Sync) ---
 async function syncSettingsToServer(newUpi, newPass) {
     const data = {
         type: "updateSettings",
@@ -53,8 +53,9 @@ async function syncSettingsToServer(newUpi, newPass) {
         password: newPass
     };
 
+    // UI par status dikhao
     const passLabel = document.getElementById('currentPassText');
-    if(passLabel) passLabel.innerText = "Syncing with Cloud...";
+    if(passLabel) passLabel.innerText = "Saving to Cloud...";
 
     try {
         await fetch(GOOGLE_SHEET_URL, {
@@ -63,14 +64,13 @@ async function syncSettingsToServer(newUpi, newPass) {
             body: JSON.stringify(data)
         });
 
-        alert("Server Updated! Ab sabhi devices par naya Password/UPI chalega. ✅");
+        alert("Server updated! Ab sabhi devices par naya Password/UPI kaam karega. ✅");
         
-        // Settings update hone ke baad fresh data fetch karo
+        // Data update hone ke baad dobara fresh fetch karo
         await fetchServerSettings();
         location.reload(); 
     } catch (error) {
-        alert("Server error! Settings save nahi ho payi.");
-        console.error(error);
+        alert("Server error! Settings save nahi hui.");
     }
 }
 
@@ -80,7 +80,7 @@ function updateUPI() {
     if(upi) {
         syncSettingsToServer(upi, currentPass);
     } else {
-        alert("UPI ID bhariye!");
+        alert("Kripya UPI ID bhariye!");
     }
 }
 
@@ -90,7 +90,7 @@ function updatePass() {
     if(newPass.length >= 4) {
         syncSettingsToServer(currentUPI, newPass);
     } else {
-        alert("Password kam se kam 4 characters ka rakhein!");
+        alert("Password kam se kam 4 characters ka hona chahiye!");
     }
 }
 
@@ -103,7 +103,7 @@ async function autoUrl(input, slot) {
     const urlInput = document.getElementById(`url${slot}`);
     const btnSpan = input.previousElementSibling; 
 
-    if (btnSpan) btnSpan.innerText = "Uploading...";
+    if (btnSpan) btnSpan.innerText = "Wait...";
     if (previewImg) previewImg.style.opacity = "0.3";
 
     const formData = new FormData();
@@ -146,7 +146,7 @@ async function saveProduct() {
     ].filter(url => url.trim() !== "");
 
     if (!name || !price || gallery.length === 0) {
-        alert("Details bharo!");
+        alert("Kripya Name, Price aur kam se kam 1 Photo dalein!");
         return;
     }
 
@@ -171,10 +171,13 @@ async function saveProduct() {
             body: JSON.stringify(newProduct)
         });
 
-        alert("Product Published! ✅");
+        alert("Product Published to Cloud! ✅");
         location.reload(); 
     } catch (error) {
-        alert("Server error!");
+        alert("Server error! Product save nahi hua.");
+    } finally {
+        submitBtn.innerText = "PUBLISH PRODUCT";
+        submitBtn.disabled = false;
     }
 }
 
@@ -186,13 +189,13 @@ function displayAdminProducts(products) {
     list.innerHTML = products.slice().reverse().map(p => `
         <div class="p-card">
             <img src="${p.mainImg}">
-            <p style="font-size:12px; margin:5px 0;">${p.name}</p>
+            <p style="font-size:12px; font-weight:bold; margin:5px 0;">${p.name}</p>
             <p style="color:#ff4757; font-weight:bold;">₹${p.price}</p>
         </div>
     `).join('');
 }
 
 function logout() { 
-    localStorage.clear(); // Logout par sab saaf taaki security bani rahe
+    localStorage.clear(); 
     window.location.href = "index.html"; 
 }
