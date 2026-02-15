@@ -128,7 +128,7 @@ function buyNow() {
     const product = getProductData();
     if(product) {
         const text = `Hi, I want to buy: ${product.name} (ID: ${product.id}) for ₹${product.price}`;
-        window.open(`https://wa.me/91XXXXXXXXXX?text=${encodeURIComponent(text)}`, '_blank');
+        window.open(`https://wa.me/917976850122?text=${encodeURIComponent(text)}`, '_blank');
     }
 }
 
