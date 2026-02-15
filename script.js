@@ -1,6 +1,5 @@
 // --- 1. CONFIGURATION ---
-// Is URL ko tabhi badlein jab aap naya Deployment karein
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwa6pRaolfAsAWvljQM_2wj1K6ZHm5pNnqMCKFGbZbCJ4o66HObBQh4DF0NKHZY9PKm/exec"; 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzhFNoQoyFnGiG6jSEP47VkarkIFj6ilIPME3sK_1vpFvL2SG23PtHyShb7VOdt1e3P/exec"; 
 
 let allProducts = [];
 let currentData = [];
@@ -9,14 +8,21 @@ let currentData = [];
  * Page load hote hi data mangwane ki koshish karein
  */
 window.onload = async () => {
-    // Pehle LocalStorage wala turant dikhao (user ko khali screen na dikhe)
+    // 1. Loader dikhao jab tak data load na ho
+    const grid = document.getElementById('productDisplay');
+    if (grid) grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px;"><i class="fa-solid fa-spinner fa-spin" style="font-size:30px; color:#9c27b0;"></i><p>Loading Products...</p></div>';
+
+    // 2. Pehle LocalStorage se purana data dikhao (Instant feel ke liye)
     const localData = localStorage.getItem('myProducts');
     if (localData) {
-        allProducts = JSON.parse(localData);
-        currentData = [...allProducts];
-        render(allProducts);
+        try {
+            allProducts = JSON.parse(localData);
+            currentData = [...allProducts];
+            render(allProducts);
+        } catch(e) { console.log("Cache error"); }
     }
-    // Phir Background mein Cloud se naya data lao
+    
+    // 3. Phir Cloud se ekdum taaza data lao
     await refreshData();
 };
 
@@ -25,25 +31,45 @@ window.onload = async () => {
  */
 async function refreshData() {
     try {
-        // Cache busting ke liye timestamp (taki purana data na dikhe)
+        // Cache busting: t=Date.now() browser ko naya data lane par majboor karta hai
         const fetchUrl = SCRIPT_URL + (SCRIPT_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
         
         const response = await fetch(fetchUrl);
+        if (!response.ok) throw new Error("Server not responding");
         
-        if (!response.ok) throw new Error("Network response was not ok");
+        const result = await response.json();
         
-        const sheetData = await response.json();
-        
-        if (sheetData && sheetData.length > 0) {
-            allProducts = sheetData;
+        let freshProducts = [];
+
+        // Admin Panel format check: { products: [], settings: {} }
+        if (result.products && Array.isArray(result.products)) {
+            freshProducts = result.products;
+            
+            // Sync UPI and Password to LocalStorage
+            if(result.settings) {
+                localStorage.setItem('ghabaUPI', result.settings.upi);
+                localStorage.setItem('adminPassword', result.settings.password);
+            }
+        } 
+        // Agar result sirf ek array hai
+        else if (Array.isArray(result)) {
+            freshProducts = result;
+        }
+
+        if (freshProducts.length > 0) {
+            allProducts = freshProducts;
             currentData = [...allProducts];
-            // Naye phone ke liye save karein
+            
+            // Store in LocalStorage for next visit
             localStorage.setItem('myProducts', JSON.stringify(allProducts));
             render(allProducts); 
-            console.log("Cloud Data Synced!");
+            console.log("Cloud Sync Successful. Total:", allProducts.length);
+        } else {
+            // Agar sheet khali hai
+            render([]);
         }
     } catch (error) {
-        console.error("Sheet load error:", error);
+        console.error("Sync Error:", error);
     }
     updateCartBadge();
 }
@@ -59,28 +85,28 @@ function render(data) {
         grid.innerHTML = `
             <div style="grid-column: 1/-1; text-align: center; padding: 50px; color: #888;">
                 <i class="fa-solid fa-box-open" style="font-size: 40px; margin-bottom: 10px; color: #ccc;"></i>
-                <h3>Abhi koi product live nahi hai</h3>
-                <p>Admin panel se sync hone ka intezar karein.</p>
+                <h3>Stock Update Ho Raha Hai</h3>
+                <p>Kripya thodi der mein check karein ya refresh karein.</p>
             </div>`;
         return;
     }
 
     grid.innerHTML = '';
     
-    // Naye products ko upar dikhane ke liye reverse
+    // Naye products hamesha upar dikhane ke liye reverse()
     const displayData = [...data].reverse();
 
     displayData.forEach(p => {
         const currentPrice = parseFloat(p.price) || 0;
         const originalPrice = Math.round(currentPrice * 1.4);
         
-        // Image logic: sheet ke header se matching
+        // Multiple fallback for images
         let imgPath = p.mainImg || p.img || (p.gallery && p.gallery[0]) || 'https://via.placeholder.com/300?text=No+Image';
 
         grid.innerHTML += `
             <div class="product-card" onclick="openProduct(${p.id})">
                 <div class="img-wrapper">
-                    <img src="${imgPath}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/300?text=Image+Error'">
+                    <img src="${imgPath}" alt="${p.name}" loading="lazy" onerror="this.src='https://via.placeholder.com/300?text=Image+Error'">
                     <div class="wishlist-icon" onclick="event.stopPropagation(); addToWishlist(${p.id})">
                         <i class="fa-regular fa-heart"></i>
                     </div>
@@ -94,7 +120,7 @@ function render(data) {
                     </div>
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 5px;">
                          <span class="rating-pill">4.2 <i class="fa-solid fa-star" style="font-size: 8px;"></i></span>
-                        <span style="font-size: 11px; color: #888;">Free Delivery</span>
+                        <span style="font-size: 11px; color: #00b894; font-weight:bold;">Free Delivery</span>
                     </div>
                 </div>
             </div>`;
@@ -106,7 +132,7 @@ function render(data) {
 function searchProduct() {
     const val = document.getElementById('searchInput').value.toLowerCase();
     const filtered = allProducts.filter(p => 
-        p.name.toLowerCase().includes(val) || 
+        (p.name && p.name.toLowerCase().includes(val)) || 
         (p.category && p.category.toLowerCase().includes(val))
     );
     render(filtered);
@@ -142,5 +168,5 @@ function addToWishlist(id) {
     alert("Wishlist mein add ho gaya! ❤️");
 }
 
-// Phone switch hone par refresh ke liye
+// Jab user doosre tab se wapas aaye toh data refresh karein
 window.onfocus = refreshData;

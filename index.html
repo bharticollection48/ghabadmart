@@ -25,7 +25,7 @@
         .wishlist-wrapper { position: relative; cursor: pointer; margin-right: 10px; }
         .wish-badge {
             position: absolute; top: -8px; right: -8px;
-            background: #ff4757; color: white; font-size: 10px;
+            background: #ee0418; color: white; font-size: 10px;
             padding: 2px 6px; border-radius: 50%; font-weight: bold; display: none;
         }
 
@@ -80,8 +80,8 @@
                     <i class="fa-solid fa-ellipsis-vertical menu-trigger" style="cursor:pointer; padding:5px;" onclick="toggleDropdown(event)"></i>
                     <div id="menuDropdown" class="dropdown-menu">
                         <a href="#" onclick="alert('Ghaba: Best Online Shopping')">About Site</a>
-                        <a href="#" onclick="alert('Help Line: 1800-123-4567')">Help Line</a>
-                        <a href="https://wa.me/91XXXXXXXXXX?text=Hello" target="_blank">Customer Care</a>
+                        <a href="#" onclick="alert('Help Line: 7427061744')">Help Line</a>
+                        <a href="https://wa.me/917427061744?text=Hello" target="_blank">Customer Care</a>
                     </div>
                 </div>
             </div>
@@ -100,8 +100,8 @@
     <section class="category-strip" id="catStrip"></section>
 
     <div class="filter-strip">
-        <button class="pill-btn" onclick="sortProducts('low')">High Price</button>
-        <button class="pill-btn" onclick="sortProducts('high')"> Low Price</button>
+        <button class="pill-btn" onclick="sortProducts('high')">High Price</button>
+        <button class="pill-btn" onclick="sortProducts('low')"> Low Price</button>
         <button class="pill-btn" onclick="refreshData()">Reset <i class="fa-solid fa-rotate-right"></i></button>
     </div>
 
@@ -125,8 +125,7 @@
 
     <script>
         // --- CONFIGURATION ---
-        // Yahan aapka URL pehle se updated hai
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwa6pRaolfAsAWvljQM_2wj1K6ZHm5pNnqMCKFGbZbCJ4o66HObBQh4DF0NKHZY9PKm/exec"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzhFNoQoyFnGiG6jSEP47VkarkIFj6ilIPME3sK_1vpFvL2SG23PtHyShb7VOdt1e3P/exec"; 
         let allProducts = [];
         let currentData = [];
 
@@ -160,33 +159,44 @@
 
         async function refreshData() {
             try {
-                // Pehle LocalStorage wala turant dikhao (Fast loading)
-                const localData = localStorage.getItem('myProducts');
-                if (localData) {
-                    allProducts = JSON.parse(localData);
-                    currentData = [...allProducts];
-                    render(allProducts);
+                // 1. Loader dikhao
+                const grid = document.getElementById('productDisplay');
+                
+                // 2. Fetch fresh data from Cloud
+                const response = await fetch(SCRIPT_URL + "?t=" + new Date().getTime());
+                const result = await response.json();
+                
+                let freshProducts = [];
+                
+                // --- FIXED LOGIC: Format check ---
+                if (result.products && Array.isArray(result.products)) {
+                    freshProducts = result.products;
+                    // UPI/Password Sync
+                    if(result.settings) {
+                        localStorage.setItem('ghabaUPI', result.settings.upi);
+                        localStorage.setItem('adminPassword', result.settings.password);
+                    }
+                } else if (Array.isArray(result)) {
+                    freshProducts = result;
                 }
 
-                // Cloud se naya data fetch karo (Sync for all devices)
-                if (SCRIPT_URL) {
-                    // Cache bust karne ke liye timestamp use kiya hai taaki fresh data mile
-                    const response = await fetch(SCRIPT_URL + "?t=" + new Date().getTime());
-                    const sheetData = await response.json();
-                    
-                    if (sheetData && sheetData.length > 0) {
-                        allProducts = sheetData;
-                        localStorage.setItem('myProducts', JSON.stringify(allProducts));
-                        currentData = [...allProducts];
-                        render(allProducts);
-                        console.log("Cloud sync successful!");
-                    }
+                if (freshProducts.length > 0) {
+                    allProducts = freshProducts;
+                    currentData = [...allProducts];
+                    localStorage.setItem('myProducts', JSON.stringify(allProducts));
+                    render(allProducts);
+                    console.log("Sync Complete. Items:", allProducts.length);
+                } else {
+                    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px;"><h3>Koi product live nahi hai!</h3></div>';
                 }
             } catch (e) {
-                console.log("Data Sync Error:", e);
-                // Error hone par local data se chalne do
-                allProducts = JSON.parse(localStorage.getItem('myProducts')) || [];
-                render(allProducts);
+                console.log("Fetch Error:", e);
+                // Fail hone par local se load karo
+                const local = localStorage.getItem('myProducts');
+                if(local) {
+                    allProducts = JSON.parse(local);
+                    render(allProducts);
+                }
             }
             updateCartBadge();
             updateWishlistBadge();
@@ -196,11 +206,6 @@
             const grid = document.getElementById('productDisplay');
             if (!grid) return;
             
-            if (!data || data.length === 0) {
-                grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px;"><h3>Koi product nahi mila!</h3></div>';
-                return;
-            }
-
             const wishlist = JSON.parse(localStorage.getItem('myWishlist')) || [];
 
             grid.innerHTML = [...data].reverse().map(p => {
@@ -212,7 +217,7 @@
                 return `
                     <div class="p-card" onclick="openProduct(${p.id})">
                         <div class="p-img-wrapper">
-                            <img src="${img}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/300'">
+                            <img src="${img}" alt="${p.name}" loading="lazy" onerror="this.src='https://via.placeholder.com/300'">
                             <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart wish-icon" 
                                style="color: ${isFav ? '#ff4757' : ''}" 
                                onclick="toggleWishlist(event, ${p.id})"></i>
@@ -234,6 +239,7 @@
             }).join('');
         }
 
+        // --- Baki functions pehle wale hi hain (Sahi hain) ---
         function toggleWishlist(event, id) {
             event.stopPropagation();
             let wishlist = JSON.parse(localStorage.getItem('myWishlist')) || [];
@@ -249,6 +255,7 @@
             const badge = document.getElementById('wishBadge');
             const mainIcon = document.getElementById('mainWishIcon');
             let wishlist = JSON.parse(localStorage.getItem('myWishlist')) || [];
+            if (!badge) return;
             badge.innerText = wishlist.length;
             if (wishlist.length > 0) {
                 badge.style.display = "block";
@@ -308,8 +315,17 @@
         window.onfocus = () => {
             updateCartBadge();
             updateWishlistBadge();
-            refreshData(); // Jab app vapas kholein toh refresh ho jaye
+            refreshData(); 
         };
     </script>
+    <div class="wa-container">
+        <div class="wa-message">Hi! Need help? 👋</div>
+        <a href="https://wa.me/7427061744?text=Hello! Hi ! Need help ." 
+        class="whatsapp-modern" 
+        target="_blank">
+            <i class="fa-brands fa-whatsapp"></i>
+            <span class="wa-pulse"></span>
+        </a>
+    </div>
 </body>
 </html>

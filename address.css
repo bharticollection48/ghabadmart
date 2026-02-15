@@ -1,5 +1,5 @@
 :root {
-    --primary: #9c27b0;
+    --primary: #e90b0b;
     --bg-light: #f7f8f9;
     --white: #ffffff;
     --text-dark: #333;
@@ -115,7 +115,7 @@ body {
     font-weight: bold;
     font-size: 15px;
     cursor: pointer;
-    box-shadow: 0 4px 10px rgba(156, 39, 176, 0.2);
+    box-shadow: 0 4px 10px rgba(245, 5, 5, 0.2);
 }
 
 .final-btn:active {

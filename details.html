@@ -25,8 +25,8 @@
             min-width: 45px;
         }
         .size-btn.active {
-            border-color: #9c27b0;
-            background: #9c27b0;
+            border-color: #e40888;
+            background: #f3047c;
             color: white;
         }
 
@@ -53,17 +53,17 @@
         .rel-card img { width: 100%; height: 150px; object-fit: cover; }
         .rel-info { padding: 8px; }
         .rel-name { font-size: 12px; color: #444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .rel-price { font-weight: 700; color: #9c27b0; font-size: 14px; margin-top: 4px; }
+        .rel-price { font-weight: 700; color: #ee0b8f; font-size: 14px; margin-top: 4px; }
     </style>
 </head>
 <body>
 
     <header>
         <i class="fa-solid fa-chevron-left" onclick="history.back()"></i>
-        <h3 style="font-weight: 800; color: #9c27b0;">GHABA</h3>
+        <h3 style="font-weight: 800; color: #f10d6c;">GHABA</h3>
         <div onclick="window.location.href='cart.html'" style="position: relative; cursor: pointer;">
             <i class="fa-solid fa-bag-shopping" style="font-size: 22px;"></i>
-            <span id="badge" style="position: absolute; top:-5px; right:-8px; background:#9c27b0; color:white; border-radius:50%; padding:2px 6px; font-size:10px; display:none;">0</span>
+            <span id="badge" style="position: absolute; top:-5px; right:-8px; background:#f3067c; color:white; border-radius:50%; padding:2px 6px; font-size:10px; display:none;">0</span>
         </div>
     </header>
 
@@ -90,7 +90,7 @@
         </div>
 
         <div style="background: #fdf2ff; padding: 15px; border-radius: 12px; margin: 20px 0;">
-            <h4 style="margin: 0 0 10px 0; color: #9c27b0;">Product Specifications</h4>
+            <h4 style="margin: 0 0 10px 0; color: #e4073e;">Product Specifications</h4>
             <table class="detail-table">
                 <tr><td class="td-label">Category</td><td class="td-value" id="pCat">Fashion</td></tr>
                 <tr><td class="td-label">Material</td><td class="td-value">Premium Quality</td></tr>
@@ -232,5 +232,14 @@
         }
         window.onload = updateCartBadge;
     </script>
+    <div class="wa-container">
+        <div class="wa-message">Hi! Need help? 👋</div>
+        <a href="https://wa.me/7427061744?text=Hello! Hi ! Need help ." 
+        class="whatsapp-modern" 
+        target="_blank">
+            <i class="fa-brands fa-whatsapp"></i>
+            <span class="wa-pulse"></span>
+        </a>
+    </div>
 </body>
 </html>

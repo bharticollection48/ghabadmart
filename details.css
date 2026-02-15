@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
 :root {
-    --primary: #9c27b0;
+    --primary: #f70994;
     --dark: #222;
     --light-gray: #f4f4f7;
     --text-muted: #666;
@@ -108,4 +108,80 @@ header {
     gap: 8px;
 }
 .btn-cart { background: var(--light-gray); color: var(--dark); border: 1px solid #ddd; }
-.btn-buy { background: var(--primary); color: #fff; box-shadow: 0 5px 15px rgba(156, 39, 176, 0.3); }
+.btn-buy { background: var(--primary); color: #fff; box-shadow: 0 5px 15px rgba(247, 2, 104, 0.3); }
+
+/* Container */
+.wa-container {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Chat Message Pop-up */
+.wa-message {
+    background: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
+    border: 1px solid #eee;
+    animation: fadeInOut 4s infinite; /* Message chamkta rahega */
+}
+
+/* The Button */
+.whatsapp-modern {
+    background: linear-gradient(45deg, #25d366, #128c7e);
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 35px;
+    text-decoration: none;
+    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+    position: relative;
+    transition: transform 0.3s ease;
+}
+
+.whatsapp-modern:hover {
+    transform: translateY(-5px) scale(1.05);
+}
+
+/* Pulsing Animation Effect */
+.wa-pulse {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #25d366;
+    border-radius: 50%;
+    z-index: -1;
+    animation: wa-ripple 2s infinite;
+}
+
+/* Animations */
+@keyframes wa-ripple {
+    0% { transform: scale(1); opacity: 0.5; }
+    100% { transform: scale(1.6); opacity: 0; }
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0.9; transform: translateY(0); }
+    50% { opacity: 1; transform: translateY(-3px); }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .wa-container { bottom: 20px; right: 20px; }
+    .whatsapp-modern { width: 55px; height: 55px; font-size: 30px; }
+    .wa-message { font-size: 12px; padding: 6px 12px; }
+}
